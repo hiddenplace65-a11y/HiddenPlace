@@ -1,70 +1,53 @@
 # HiddenPlace — Telegram-like Channel App
 
-A free, self-hosted channel app for Android with image/video uploads to Google Drive, thumbnails, and a Telegram-like messaging feed.
+A free, self-hosted channel app for Android with image/video uploads to **Firebase** (no credit card required), thumbnails, and a Telegram-like messaging feed.
 
 ## Overview
 
 - **Frontend**: Android app (Kotlin + Jetpack Compose)
 - **Backend**: Node.js + Express server
-- **Storage**: Google Drive (free, 15 GB per account)
-- **Thumbnails**: Auto-generated for videos using ffmpeg
+- **Storage**: Firebase Storage (free, 1 GB/month)
+- **Database**: Firestore (free tier, no credit card needed)
+- **Deploy**: Render.com (free hosting, no credit card)
 
-## Quick Start
+## ⚡ Quick Start (No Credit Card Required)
 
 ### Prerequisites
+1. GitHub account (free)
+2. Render account (free, via GitHub)
+3. Firebase account (free, **no credit card needed**)
 
-1. **Android Studio** (Jellyfish+) and Android SDK 33
-2. **Node.js** 14+ and npm
-3. **ffmpeg** installed
-4. **Google Cloud Account** (free tier works)
+### 3-Step Setup
 
-### 1. Setup Backend
+**1. Create Firebase Project (2 min)**
+- Go to [Firebase Console](https://console.firebase.google.com)
+- Create project → Enable Firestore + Storage → Download service account key
 
-```bash
-# Navigate to server directory
-cd server
+**2. Deploy Backend (5 min)**
+- Go to [Render.com](https://render.com)
+- Deploy `server/` folder
+- Set Firebase env vars (key, bucket, database URL)
+- Get Render URL
 
-# Install dependencies
-npm install
+**3. Build & Install (2 min)**
+- Update `Config.kt` with Render URL
+- Push to GitHub → GitHub Actions auto-builds APK
+- Download APK → Install on phone
 
-# Create Google Cloud project and service account (see server/README.md)
-# Download service account JSON key and place as service-account.json
+**Total: ~10 minutes** ⏱️
 
-# Create Google Drive folder and note the folder ID
-# Share folder with service account email
+---
 
-# Set environment variables
-export GOOGLE_APPLICATION_CREDENTIALS=./service-account.json
-export GDRIVE_FOLDER_ID=<your-folder-id>
-export PORT=4000
+## 📖 Full Documentation
 
-# Start backend
-npm start
-# Server runs on http://localhost:4000
-```
+| Document | Purpose |
+|----------|---------|
+| **[FIREBASE_SETUP.md](./FIREBASE_SETUP.md)** | ⭐ **START HERE** — Step-by-step Firebase + Render setup (no credit card) |
+| [DEPLOYMENT.md](./DEPLOYMENT.md) | Google Drive + Render setup (requires credit card for Google Cloud) |
+| [android/README.md](./android/README.md) | Android app build & troubleshooting |
+| [server/README.md](./server/README.md) | Backend API reference |
 
-### 2. Setup Android App
-
-```bash
-# Navigate to Android directory
-cd android
-
-# Build APK
-./gradlew build
-
-# Run on emulator or device
-./gradlew installDebug
-
-# Or open in Android Studio and click Run
-```
-
-### 3. Use the App
-
-1. Open app on Android device/emulator.
-2. Type a message → tap Send.
-3. Tap **📸 Image** to upload image or **🎥 Video** to upload video.
-4. See thumbnails in feed.
-5. Tap thumbnail to view full image or play video.
+---
 
 ## File Structure
 
@@ -77,151 +60,137 @@ HiddenPlace/
 │   │   ├── java/com/hiddenplace/
 │   │   │   ├── MainActivity.kt      # Compose UI
 │   │   │   ├── Message.kt           # Data models
-│   │   │   └── ApiService.kt        # Retrofit client
-│   │   └── res/                     # Resources (colors, themes, etc.)
+│   │   │   ├── ApiService.kt        # Retrofit client
+│   │   │   └── Config.kt            # Backend URL config
+│   │   └── res/                     # Resources
 │   ├── build.gradle
 │   ├── settings.gradle
 │   └── README.md
 │
-├── server/                     # Node.js backend
+├── server/                     # Node.js + Firebase backend
 │   ├── index.js               # Express server + /upload endpoint
-│   ├── drive.js               # Google Drive API helpers
 │   ├── package.json
-│   ├── service-account.json   # (create after setting up Google Cloud)
-│   ├── .env                   # (optional, for env vars)
 │   └── README.md
 │
+├── .github/workflows/
+│   └── build.yml              # GitHub Actions auto-build APK
+│
+├── FIREBASE_SETUP.md          # ⭐ Firebase setup (no credit card)
+├── DEPLOYMENT.md              # Google Drive setup (alternative)
 └── README.md                  # This file
 ```
 
 ## Features
 
 ### Android App
-- **Telegram-like UI**: Clean message feed with card-based layout.
-- **Image Upload**: Pick from gallery, upload, show thumbnail.
-- **Video Upload**: Pick from gallery, upload, auto-generate thumbnail on backend.
-- **Media Viewer**: Tap thumbnail → full-screen image or video player.
-- **Message Composer**: Type text, attach media, send.
-- **Auto-Refresh**: Messages load on startup and after each upload.
+- **Telegram UI**: Clean message feed with card layout
+- **Image Upload**: Pick → upload → show thumbnail
+- **Video Upload**: Pick → upload → auto-thumbnail
+- **Media Viewer**: Tap thumbnail → full-screen image or video
+- **Message Composer**: Text + media in one interface
+- **Real-time Feed**: Auto-refresh messages
 
 ### Backend
-- **Multipart Upload**: Accept image and video files.
-- **Google Drive Storage**: Files stored in shared Drive folder.
-- **Thumbnail Generation**: ffmpeg extracts 1-sec frame from video at 360p.
-- **Public URLs**: Files made publicly readable; URLs returned to app.
-- **RESTful API**: `/upload`, `/messages` (extensible).
-
-## Configuration
-
-### Backend Configuration
-
-Set environment variables in `server/`:
-
-```bash
-# Google service account key location
-export GOOGLE_APPLICATION_CREDENTIALS=./service-account.json
-
-# Google Drive folder ID where files are stored
-export GDRIVE_FOLDER_ID=<your-folder-id>
-
-# Server port (default 4000)
-export PORT=4000
-```
-
-### Android Configuration
-
-**For Emulator** (default):
-- Backend URL: `http://10.0.2.2:4000/`
-
-**For Physical Device**:
-- Update `MainActivity.kt` line ~100:
-  ```kotlin
-  private val apiService = ApiService.create("http://<YOUR_MACHINE_IP>:4000/")
-  ```
-  Replace `<YOUR_MACHINE_IP>` with your machine's IP (e.g., `192.168.1.100`).
-
-## Usage Examples
-
-### Upload Image via curl
-
-```bash
-curl -F "media=@/path/to/image.jpg" http://localhost:4000/upload
-```
-
-### Response
-
-```json
-{
-  "fileUrl": "https://drive.google.com/file/d/1Abc2Def3gHi4jKl5mNoPqRs6tUvWxYz7/view",
-  "thumbnail": "https://drive.google.com/file/d/1Abc2Def3gHi4jKl5mNoPqRs6tUvWxYz7/view"
-}
-```
-
-## Notes & Recommendations
-
-### Storage Limits
-- **Google Drive Free**: 15 GB per account (quota resets daily for some operations).
-- **For scale**: Consider S3, GCS, or Backblaze B2 for larger deployments.
-
-### Performance
-- **Video Thumbnails**: ffmpeg is single-threaded; queue long videos or use workers for production.
-- **Image Compression**: Client-side compression before upload saves bandwidth and Drive space.
-- **CDN**: Add Cloudflare or CloudFront in front of Drive for faster delivery.
-
-### Security
-- **Public Files**: All uploaded files are public (no auth required to view).
-- **Add Authentication**: Implement user login and role-based access for production.
-- **Validate Input**: Add file type and size checks on backend.
-
-### Scalability Roadmap
-1. Add user authentication (JWT, OAuth).
-2. Move to S3 or GCS for unlimited storage.
-3. Add message DB (SQLite → PostgreSQL).
-4. Implement image/video compression and transcoding.
-5. Add CDN caching layer.
-6. Deploy on cloud (Heroku, AWS Lambda, GCP).
-
-## Troubleshooting
-
-### Backend Connection Fails
-- **Emulator**: Use `http://10.0.2.2:4000` (not `localhost`).
-- **Device**: Use machine IP, e.g., `192.168.1.100:4000`.
-- **Check backend is running**: `curl http://localhost:4000/upload` should respond.
-
-### Video Upload Succeeds, No Thumbnail
-- **ffmpeg not installed**: `apt-get install ffmpeg` or `brew install ffmpeg`.
-- **Check logs**: Backend logs should show ffmpeg errors.
-
-### Permission Denied on Files
-- **Android 6.0+**: App requests runtime permissions on first use.
-- Grant "Photos", "Videos", "Camera" when prompted.
-
-### Drive API Errors
-- **Service account not shared to folder**: Share the Drive folder with service account email (Editor role).
-- **API not enabled**: Enable Google Drive API in Google Cloud Console.
-
-## Next Steps
-
-- **User Authentication**: Add Firebase Auth or JWT-based login.
-- **Message Search**: Implement full-text search on messages.
-- **Reactions**: Add emoji reactions to messages.
-- **Media Compression**: Client-side image/video compression before upload.
-- **Offline Mode**: Cache messages locally with Room or SQLite.
-- **Notifications**: Push notifications for new messages.
-- **Admin Panel**: Backend dashboard to manage messages and storage.
-
-## License
-
-MIT
-
-## Support
-
-For issues:
-1. Check the Android [README.md](./android/README.md) for app-specific troubleshooting.
-2. Check the server [README.md](./server/README.md) for backend setup and API details.
-3. Verify Google Cloud project and Drive folder permissions.
-4. Ensure ffmpeg and Node.js versions are correct.
+- **Firebase Storage**: Free 1 GB/month media storage
+- **Firestore DB**: Free database for messages
+- **Multipart Upload**: Accept images and videos
+- **REST API**: `/upload`, `/messages` endpoints
+- **No ffmpeg needed**: Works on free Render plan
 
 ---
 
-**Happy messaging!** 🚀 
+## Which Setup?
+
+### ✅ **Firebase (Recommended)**
+- ✨ **No credit card required**
+- 1 GB free storage/month
+- Free Firestore database
+- Super easy setup
+- **→ Use [FIREBASE_SETUP.md](./FIREBASE_SETUP.md)**
+
+### ⚠️ Google Drive
+- Requires Google Cloud credit card
+- 15 GB free per account
+- More storage but complex setup
+- **→ Use [DEPLOYMENT.md](./DEPLOYMENT.md) if you have credit card**
+
+---
+
+## Usage
+
+1. **Install APK** on Android phone
+2. **Type message** → Tap Send
+3. **Tap 📸 Image** or **🎥 Video** to upload
+4. **See thumbnail** in feed
+5. **Tap thumbnail** to view full media
+
+---
+
+## Cost Breakdown
+
+| Service | Free Tier | Cost |
+|---------|-----------|------|
+| **Firebase Storage** | 1 GB/month | $0.18/GB after |
+| **Firestore Database** | 1 GB + 50K reads/day | $0.06/100K reads after |
+| **Render Backend** | Free tier included | Pay-as-you-go after |
+| **GitHub Actions** | 2,000 min/month free | Usually free |
+| **Total** | **Completely Free** | ✅ |
+
+For a small channel (< 100 users), **you'll stay free forever**.
+
+---
+
+## Troubleshooting
+
+### Setup Issues
+1. **Can't access Google Cloud**: Use Firebase instead (see FIREBASE_SETUP.md)
+2. **APK download fails**: Check GitHub Actions tab for build logs
+3. **App won't connect**: Verify Render URL in Config.kt
+
+### Runtime Issues
+1. **Upload fails**: Check Render backend logs on Render.com dashboard
+2. **No thumbnail**: Firebase displays full URL; client can extract later
+3. **Firestore quota**: Free tier resets daily; upgrade if needed
+
+See [FIREBASE_SETUP.md](./FIREBASE_SETUP.md) for more help.
+
+---
+
+## Next Steps (Optional)
+
+1. **User Auth**: Add sign-in with Google
+2. **Search**: Full-text search messages
+3. **Reactions**: Emoji reactions to messages
+4. **Offline**: Cache messages locally
+5. **Compression**: Client-side image/video compression
+6. **CDN**: Add Cloudflare in front
+
+---
+
+## Tech Stack
+
+- **Android**: Kotlin, Jetpack Compose, Retrofit, ExoPlayer, Coil
+- **Backend**: Node.js, Express, Firebase Admin SDK
+- **Database**: Firestore (NoSQL)
+- **Storage**: Firebase Storage (Google Cloud)
+- **Hosting**: Render.com (free tier)
+- **CI/CD**: GitHub Actions
+
+---
+
+## Support
+
+1. **Firebase not working?** → Check [FIREBASE_SETUP.md](./FIREBASE_SETUP.md)
+2. **Android app issues?** → Check [android/README.md](./android/README.md)
+3. **Backend problems?** → Check [server/README.md](./server/README.md)
+4. **Still stuck?** → Check Render/Firebase logs
+
+---
+
+## License
+
+MIT — Use freely for personal or commercial projects
+
+---
+
+**Ready?** → [**→ Start with FIREBASE_SETUP.md**](./FIREBASE_SETUP.md) ⭐ 
